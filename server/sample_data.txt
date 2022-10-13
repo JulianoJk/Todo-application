@@ -1,0 +1,20 @@
+## Select 'raw' and 'Text -> JSON' in Postman
+# Register
+{
+    "email": "bbb@ccc.dd",
+    "username": "bbb",
+    "password": "11111",
+    "passwordRepeat": "11111"
+}
+
+# Login
+{
+    "email": "bbb@ccc.dd",
+    "password": "11111",
+}
+
+# Sample login response, use token for accessing restricted pages
+{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxZTkyODkwZjllNjE5ZGU1YTY1OWZjMCIsImlhdCI6MTY0MjY3MDM1N30.y6_xBUd_UraqNom7E6qCceXZQmsH96H3wmWqY1Orvck",
+    "username": "bbb"
+}

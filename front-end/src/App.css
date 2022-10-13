@@ -1,0 +1,15 @@
+body {
+  background: linear-gradient(#805d93, #f49fbc, #ffd3ba, #9ebd6e);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.text {
+  color: rgba(255, 255, 255, 0.795);
+}

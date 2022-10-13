@@ -1,0 +1,16 @@
+.text_font {
+  font-size: 3em;
+  font-family: cursive, "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+    "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+}
+.placeholder_font{
+  font-family: cursive, "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+    "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+}
+
+.modal_background{
+  background-color: #f5f3f4;
+}
+.input_color{
+  background-color: #ffffff;
+}

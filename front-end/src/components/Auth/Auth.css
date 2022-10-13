@@ -1,0 +1,17 @@
+.border {
+  width: 500px;
+  border-width: 2px;
+  border-radius: 20px;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  background-color: rgba(94, 109, 119, 0.21);
+  padding: 10px;
+  margin-top: 10px;
+}
+.title {
+  color: #333333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: cursive, "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+    "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+}
