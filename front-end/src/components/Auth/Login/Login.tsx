@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { NavigateFunction, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTaskDispatch } from "../../../context/TaskContext";
+import { useUserDispatch } from "../../../context/UserContext";
 import {
   ITasks,
   IUserInfoContext,
@@ -10,8 +11,6 @@ import { getTasks, loginAPI } from "../../../API/Api";
 import Logo from "../../../images/logo.png";
 import "../Auth.css";
 import ErrorHandler from "../../ErrorHandler/ErrorHandler";
-import { Link } from "react-router-dom";
-import { useUserDispatch } from "../../../context/UserContext";
 import {
   PasswordInput,
   Group,
@@ -25,69 +24,53 @@ import {
 import { AlertComponent } from "../../AlertComponent/AlertComponent";
 
 const Login: React.FC = () => {
-  const navigate: NavigateFunction = useNavigate();
+  const navigate = useNavigate();
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const [errorMessage, setErrorMessage] = useState<any>();
-
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  // After logIn create get request to get (if any) tasks
   const setTodoDispatch = useTaskDispatch();
   const userDispatch: usersDispatchContext = useUserDispatch();
 
-  // Email handler
-  const onEmailChange = (e: React.BaseSyntheticEvent): void => {
-    setEmail(e.target.value);
-  };
-  // Password handler
-  const onPasswordChange = (e: React.BaseSyntheticEvent): void => {
-    setPassword(e.target.value);
-  };
-
-  const handleInputs = async (e: React.BaseSyntheticEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(undefined);
+
     try {
-      const data: string | IUserInfoContext | null | undefined = await loginAPI(
-        email,
-        password
-      );
+      const result = await loginAPI(email, password);
 
-      // Check the type of the data is returned, if is string, it contains a message which means error and display error
-      // If data is not string, it contains user's information (token, id, email) and the login was successful
-      if (typeof data === "string" || data instanceof String) {
-        setErrorMessage(data);
-      } else if (data) {
-        const user: IUserInfoContext = {
-          id: data["id"],
-          username: data["username"],
-          token: data["token"],
-        };
-        userDispatch({ type: "SET_USER", user: user });
-
-        //Get if any tasks from server
-        const savedTasks: ITasks[] | null | undefined = await getTasks(
-          user,
-          setTodoDispatch
-        );
-        if (savedTasks !== null && savedTasks !== undefined) {
-          for (let i = 0; i < savedTasks.length; i++) {
-            let taskResponse: ITasks = {
-              taskName: savedTasks[i]["taskName"],
-              taskID: savedTasks[i]["_id"],
-              completed: savedTasks[i]["completed"],
-            };
-            setTodoDispatch({
-              type: "SET_TASKS_FROM_SERVER",
-              payload: taskResponse,
-            });
-          }
-          navigate("/home");
-        } else {
-          navigate("/home");
-        }
+      if (typeof result === "string") {
+        setErrorMessage(result);
+        return;
       }
-    } catch (error) {
-      console.warn(error);
+
+      if (!result) return;
+
+      const user: IUserInfoContext = {
+        id: result.id,
+        username: result.username,
+        token: result.token,
+      };
+
+      userDispatch({ type: "SET_USER", user });
+
+      const tasks = await getTasks(user, setTodoDispatch);
+
+      tasks?.forEach((task) => {
+        setTodoDispatch({
+          type: "SET_TASKS_FROM_SERVER",
+          payload: {
+            name: task.name,
+            taskID: task._id,
+            completed: task.completed,
+          },
+        });
+      });
+
+      navigate("/home");
+    } catch (err) {
+      console.error("Login error:", err);
+      setErrorMessage("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -97,16 +80,13 @@ const Login: React.FC = () => {
         <Image radius="md" src={Logo} alt="Logo" />
       </Center>
       <h1 className="title">Log-In</h1>
-      <form
-        // values: current form values
-        onSubmit={handleInputs}
-      >
+      <form onSubmit={handleLogin}>
         <TextInput
           required
           label="Email"
           placeholder="name@example.com"
           value={email}
-          onChange={onEmailChange}
+          onChange={(e) => setEmail(e.currentTarget.value)}
           autoComplete="on"
         />
 
@@ -115,27 +95,29 @@ const Login: React.FC = () => {
           label="Password"
           placeholder="Password"
           value={password}
-          onChange={onPasswordChange}
+          onChange={(e) => setPassword(e.currentTarget.value)}
           autoComplete="on"
         />
+
         <Group position="right" mt="md">
           <Button color="green" type="submit">
             Submit
           </Button>
         </Group>
 
-        {/*Display error message if any*/}
         <AlertComponent
           className={ErrorHandler(errorMessage)}
           message={errorMessage}
         />
       </form>
+
       <Anchor component={Link} to="/register">
         <em>
-          <u> Not a member?</u>
+          <u>Not a member?</u>
         </em>
       </Anchor>
     </Box>
   );
 };
+
 export default Login;

@@ -28,7 +28,7 @@ export type TodoAction =
   | {
       type: "ADD_TASK";
       payload: {
-        taskName: string | undefined;
+        name: string | undefined;
         taskID: string | undefined;
         completed: boolean | undefined;
       };
@@ -39,7 +39,7 @@ export type TodoAction =
         completed?: boolean;
         _id?: string | undefined;
         taskID?: string;
-        taskName?: string;
+        name?: string;
       };
     }
   | ResetAction
@@ -69,7 +69,7 @@ export interface IAuthCredentials {
 export interface ITasks {
   error?: string;
   _id?: string;
-  taskName: string | undefined;
+  name: string | undefined;
   taskID: string | undefined;
   completed: boolean | undefined;
 }

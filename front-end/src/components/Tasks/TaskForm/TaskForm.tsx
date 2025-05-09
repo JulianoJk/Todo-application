@@ -1,73 +1,63 @@
-import { Button, Container, Input } from "@mantine/core";
+import { Button, Container, Input, Group } from "@mantine/core";
 import { useState } from "react";
 import { CirclePlus } from "tabler-icons-react";
 import { submitTasks } from "../../../API/Api";
-import { useTaskDispatch, useTaskState } from "../../../context/TaskContext";
+import { useTaskDispatch } from "../../../context/TaskContext";
 import { useUserState } from "../../../context/UserContext";
 import { ITasks } from "../../../Model/models";
 import DisplayTasks from "../DisplayTasks/DisplayTasks";
-import style from "./TaskForm.module.css";
+import styles from "./TaskForm.module.css";
 
 const TaskForm: React.FC = () => {
-  // Dispatch reducer for the task
-
   const { user } = useUserState();
+  const dispatch = useTaskDispatch();
 
-  const setTodoDispatch = useTaskDispatch();
+  const [name, setname] = useState("");
 
-  const taskState = useTaskState();
-
-  const [input, setInput] = useState<string>("");
-
-  // Save task's information, containing taskName,
-  const handleChange = (e: React.BaseSyntheticEvent): void => {
-    setInput(e.target.value);
-  };
-
-  // Handle submit then send tasks to server
-  const handleFormSubmit = async (
-    e: React.BaseSyntheticEvent
-  ): Promise<void> => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim() !== "") {
-      const data: ITasks | string | undefined = await submitTasks(user, input);
-      if (typeof data === "string" || data instanceof String) {
-        return;
-      } else if (data) {
-        let taskResponse: ITasks = {
-          taskName: data["taskName"],
-          taskID: data["_id"],
-          completed: data["completed"],
-        };
-        setTodoDispatch({ type: "ADD_TASK", payload: taskResponse });
-      }
-      setInput("");
-    }
+    if (!name.trim()) return;
+
+    const response = await submitTasks(user, name);
+    if (typeof response === "string" || !response) return;
+
+    dispatch({
+      type: "ADD_TASK",
+      payload: {
+        name: response.name,
+        taskID: response._id,
+        completed: response.completed,
+      },
+    });
+
+    setname("");
   };
 
   return (
-    <Container size={"md"} className={` ${style.border}`}>
-      <form onSubmit={handleFormSubmit}>
-        <Input
-          variant="filled"
-          radius="md"
-          size="lg"
-          name="task"
-          value={input}
-          onChange={handleChange}
-          placeholder="Add tasks"
-          autoComplete="on"
-        />
-
-        <Button
-          color="green"
-          radius="md"
-          size="md"
-          rightIcon={<CirclePlus size={25} />}
-        >
-          Add task
-        </Button>
+    <Container size="md" className={styles.border}>
+      <form onSubmit={handleSubmit}>
+        <Group grow mb="md">
+          <Input
+            variant="filled"
+            radius="md"
+            size="lg"
+            value={name}
+            onChange={(e: any) => setname(e.currentTarget.value)}
+            placeholder="Add tasks"
+            autoComplete="on"
+          />
+          <Button
+            type="submit"
+            color="green"
+            radius="md"
+            size="md"
+            rightIcon={<CirclePlus size={20} />}
+          >
+            Add task
+          </Button>
+        </Group>
       </form>
+
       <DisplayTasks />
     </Container>
   );
