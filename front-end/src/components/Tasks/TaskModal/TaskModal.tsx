@@ -44,7 +44,7 @@ const TaskModal: React.FC<Props> = ({
       } else if (apiResponse) {
         editTaskDispatch({
           type: "EDIT_TASK",
-          payload: { taskID: editedTodo.taskID, taskName: input },
+          payload: { taskID: editedTodo.taskID, name: input },
         });
       }
     }
@@ -72,7 +72,7 @@ const TaskModal: React.FC<Props> = ({
             type="text"
             name="editTask"
             value={input}
-            placeholder={editedTodo?.taskName}
+            placeholder={editedTodo?.name}
             onChange={handleChange}
             autoComplete="on"
           />

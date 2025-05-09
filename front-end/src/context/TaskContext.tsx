@@ -8,7 +8,7 @@ import {
 
 const defaultTaskState: Array<ITasks> = [
   {
-    taskName: undefined,
+    name: undefined,
     taskID: undefined,
     completed: undefined,
   },
@@ -20,18 +20,18 @@ const taskReducer = (state: Array<ITasks>, action: TodoAction) => {
     case "ADD_TASK":
       // save new task
       const newTodo = (
-        taskName: string | undefined,
+        name: string | undefined,
         _id: string | undefined,
         completed: boolean | undefined
       ): ITasks => {
-        return { taskName: taskName, taskID: _id, completed: completed };
+        return { name: name, taskID: _id, completed: completed };
       };
 
       // Add the tasks to the array
       return [
         ...state,
         newTodo(
-          action.payload.taskName,
+          action.payload.name,
           action.payload.taskID,
           action.payload.completed
         ),
@@ -49,10 +49,10 @@ const taskReducer = (state: Array<ITasks>, action: TodoAction) => {
     case "SET_TASKS_FROM_SERVER":
       return [...state, action.payload];
     case "EDIT_TASK":
-      // map all the tasks, when ids match, change the taskName with the new taskName
+      // map all the tasks, when ids match, change the name with the new name
       return state.map((todo) => {
         if (todo.taskID === action.payload.taskID) {
-          return { ...todo, taskName: action.payload.taskName };
+          return { ...todo, name: action.payload.name };
         }
         return todo;
       });

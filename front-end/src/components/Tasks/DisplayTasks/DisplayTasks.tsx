@@ -17,6 +17,9 @@ import styles from "./DisplayTasks.module.css";
 
 const DisplayTasks: React.FC = () => {
   const taskState = useTaskState();
+
+  console.log("taskState", taskState);
+  
   const taskDispatch = useTaskDispatch();
   const { user } = useUserState();
   // state for task modal
@@ -53,9 +56,11 @@ const DisplayTasks: React.FC = () => {
   };
   return (
     <Box mx="auto">
-      {/* Check if taskName is undefined */}
+      {/* Check if name is undefined */}
+
       {taskState
-        .filter((v) => v.taskName !== undefined)
+        .filter
+        ((v) => v.name !== undefined)
         .map((todo: ITasks, index: number) => (
           <div key={index} className={`${styles.task_container} `}>
             {/* Change complete status of a task. If task is completed, keep checked on */}
@@ -68,7 +73,7 @@ const DisplayTasks: React.FC = () => {
                   weight={500}
                   className={strikeWhenCompleted(todo.completed)}
                 >
-                  {todo.taskName}
+                  {todo.name}
                 </Text>
               }
               defaultChecked={todo.completed}

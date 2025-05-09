@@ -6,7 +6,7 @@ export const loginAPI = async (
   password: string
 ): Promise<IUserInfoContext | string | undefined> => {
   try {
-    const response = await fetch("http://localhost:3001/users/login", {
+    const response = await fetch("http://localhost:5050/api/users/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -33,7 +33,7 @@ export const registerAPI = async (
   passwordRepeat: string
 ): Promise<IUserInfoContext | string | null | undefined> => {
   try {
-    const response = await fetch("http://localhost:3001/users/register", {
+    const response = await fetch("http://localhost:5050/api/users/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -57,23 +57,23 @@ export const registerAPI = async (
 // Return tasks to server
 export const submitTasks = async (
   user: IUserInfoContext,
-  taskName: string
+  name: string
 ): Promise<ITasks | string | undefined> => {
   try {
-    const response = await fetch(`http://localhost:3001/tasks/add`, {
+    console.log("User submitting task:", user);
+
+    const response = await fetch(`http://localhost:5050/api/tasks/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-access-token": `${user.token}`,
       },
-
       body: JSON.stringify({
-        // return to the server the tasks object
-        taskName,
-        user,
+        name: name,
+        user_id: user.id, // or user._id depending on your backend
       }),
     });
-    console.log("Tasks sended!");
+
     const data: ITasks = await response.json();
     if (response.ok) {
       return data;
@@ -81,9 +81,10 @@ export const submitTasks = async (
       return data.error;
     }
   } catch (error) {
-    return;
+    console.log("Error submitting task:", error);
   }
 };
+
 
 // After login, retrieve (if any) saved tasks from the server
 // get the tasks from the server and push to array
@@ -92,13 +93,16 @@ export const getTasks = async (
   setTodoDispatch: taskDispatchContext
 ): Promise<ITasks[] | null | undefined> => {
   try {
-    const response = await fetch(`http://localhost:3001/tasks/get/${user.id}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "x-access-token": `${user.token}`,
-      },
-    });
+    const response = await fetch(
+      `http://localhost:5050/api/tasks/get/${user.id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-access-token": `${user.token}`,
+        },
+      }
+    );
     const data: ITasks[] = await response.json();
     if (response.status === 203) {
       return null;
@@ -115,7 +119,7 @@ export const deleteTasks = async (
   taskID: string | undefined
 ): Promise<void> => {
   try {
-    await fetch(`http://localhost:3001/tasks/delete`, {
+    await fetch(`http://localhost:5050/api/tasks/delete`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -136,7 +140,7 @@ export const updateTasks = async (
   completedStatus: boolean | undefined
 ): Promise<void> => {
   try {
-    await fetch(`http://localhost:3001/tasks/update`, {
+    await fetch(`http://localhost:5050/api/tasks/update`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -158,7 +162,7 @@ export const editTasks = async (
   editTodo: string
 ): Promise<ITasks | string | undefined> => {
   try {
-    const response = await fetch(`http://localhost:3001/tasks/edit`, {
+    const response = await fetch(`http://localhost:5050/api/tasks/edit`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
