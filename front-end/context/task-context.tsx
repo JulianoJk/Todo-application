@@ -1,311 +1,181 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { toast } from "sonner"
-import type { TaskContextType, Task, Folder } from "@/lib/types"
-import { useAuth } from "@/context/auth-context"
-import { generateId } from "@/lib/utils"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { toast } from "sonner";
+import type { TaskContextType, Task, Folder } from "@/lib/types";
+import { useAuth } from "@/context/auth-context";
+import {
+  getTasks as fetchTasks,
+  createTask as apiCreateTask,
+  updateTask as apiUpdateTask,
+  deleteTask as apiDeleteTask,
+  createFolder as apiCreateFolder,
+  updateFolder as apiUpdateFolder,
+  deleteFolder as apiDeleteFolder,
+  moveTaskToFolder as apiMoveTask,
+} from "@/lib/api";
 
-// Create the task context
-const TaskContext = createContext<TaskContextType | undefined>(undefined)
+const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export function TaskProvider({ children }: { children: ReactNode }) {
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [folders, setFolders] = useState<Folder[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const { user } = useAuth()
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
-  // Load tasks and folders when user changes
   useEffect(() => {
     if (user) {
-      loadUserData(user.id)
+      initializeUserData(user.id, user.token);
     } else {
-      setTasks([])
-      setFolders([])
-      setIsLoading(false)
+      setTasks([]);
+      setFolders([]);
+      setIsLoading(false);
     }
-  }, [user])
+  }, [user]);
 
-  // Load user data from localStorage
-  const loadUserData = async (userId: string) => {
-    setIsLoading(true)
+  const initializeUserData = async (userId: string, token: string) => {
+    setIsLoading(true);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      const storedFolders = JSON.parse(
+        localStorage.getItem("planyze-folders") || "[]"
+      );
+      const userFolders = storedFolders.filter(
+        (folder: Folder) => folder.userId === userId
+      );
+      setFolders(userFolders);
 
-      // Load folders
-      const storedFolders = localStorage.getItem("planyze-folders") || "[]"
-      const allFolders = JSON.parse(storedFolders)
-      const userFolders = allFolders.filter((folder: Folder) => folder.userId === userId)
-      setFolders(userFolders)
-
-      // Load tasks
-      const storedTasks = localStorage.getItem("planyze-tasks") || "[]"
-      const allTasks = JSON.parse(storedTasks)
-      const userTasks = allTasks.filter((task: Task) => task.userId === userId)
-      setTasks(userTasks)
+      const userTasks = await fetchTasks(userId, token);
+      setTasks(userTasks);
+      toast.success("Tasks loaded successfully");
     } catch (error) {
-      console.error("Failed to load user data", error)
-      toast.error("Failed to load your tasks and folders")
+      console.error("Failed to load user data", error);
+      toast.error("Failed to load tasks or folders");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  // Create a new task
-  const createTask = async (task: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId">): Promise<Task> => {
-    if (!user) throw new Error("You must be logged in to create tasks")
-
+  const createTask = async (
+    task: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId">
+  ): Promise<Task> => {
+    if (!user) throw new Error("User not authenticated");
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
-
-      const now = new Date().toISOString()
-      const newTask: Task = {
-        ...task,
-        id: generateId(),
-        createdAt: now,
-        updatedAt: now,
-        userId: user.id,
-      }
-
-      // Update local state
-      setTasks((prev) => [...prev, newTask])
-
-      // Update localStorage
-      const storedTasks = localStorage.getItem("planyze-tasks") || "[]"
-      const allTasks = JSON.parse(storedTasks)
-      allTasks.push(newTask)
-      localStorage.setItem("planyze-tasks", JSON.stringify(allTasks))
-
-      toast.success("Task created successfully")
-      return newTask
+      const taskWithUser = { ...task, userId: user.id };
+      const newTask = await apiCreateTask(taskWithUser, user.token);
+      setTasks((prev) => [...prev, newTask]);
+      toast.success("Task created");
+      return newTask;
     } catch (error) {
-      console.error("Failed to create task", error)
-      toast.error("Failed to create task")
-      throw error
+      console.error("Create task failed", error);
+      toast.error("Could not create task");
+      throw error;
     }
-  }
+  };
 
-  // Update an existing task
-  const updateTask = async (id: string, taskUpdate: Partial<Task>): Promise<Task> => {
-    if (!user) throw new Error("You must be logged in to update tasks")
-
+  const updateTask = async (
+    id: string,
+    updates: Partial<Task>
+  ): Promise<Task> => {
+    if (!user) throw new Error("User not authenticated");
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
-
-      // Find the task to update
-      const taskIndex = tasks.findIndex((t) => t.id === id)
-      if (taskIndex === -1) throw new Error("Task not found")
-
-      // Update the task
-      const updatedTask: Task = {
-        ...tasks[taskIndex],
-        ...taskUpdate,
-        updatedAt: new Date().toISOString(),
-      }
-
-      // Update local state
-      const updatedTasks = [...tasks]
-      updatedTasks[taskIndex] = updatedTask
-      setTasks(updatedTasks)
-
-      // Update localStorage
-      const storedTasks = localStorage.getItem("planyze-tasks") || "[]"
-      const allTasks = JSON.parse(storedTasks)
-      const globalTaskIndex = allTasks.findIndex((t: Task) => t.id === id)
-      if (globalTaskIndex !== -1) {
-        allTasks[globalTaskIndex] = updatedTask
-        localStorage.setItem("planyze-tasks", JSON.stringify(allTasks))
-      }
-
-      toast.success("Task updated successfully")
-      return updatedTask
+      const updated = await apiUpdateTask(id, updates, user.token);
+      setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
+      toast.success("Task updated");
+      return updated;
     } catch (error) {
-      console.error("Failed to update task", error)
-      toast.error("Failed to update task")
-      throw error
+      console.error("Update task failed", error);
+      toast.error("Could not update task");
+      throw error;
     }
-  }
+  };
 
-  // Delete a task
   const deleteTask = async (id: string): Promise<void> => {
-    if (!user) throw new Error("You must be logged in to delete tasks")
-
+    if (!user) throw new Error("User not authenticated");
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
-
-      // Update local state
-      setTasks((prev) => prev.filter((task) => task.id !== id))
-
-      // Update localStorage
-      const storedTasks = localStorage.getItem("planyze-tasks") || "[]"
-      const allTasks = JSON.parse(storedTasks)
-      const updatedTasks = allTasks.filter((task: Task) => task.id !== id)
-      localStorage.setItem("planyze-tasks", JSON.stringify(updatedTasks))
-
-      toast.success("Task deleted successfully")
+      await apiDeleteTask(id, user.token);
+      setTasks((prev) => prev.filter((task) => task.id !== id));
+      toast.success("Task deleted");
     } catch (error) {
-      console.error("Failed to delete task", error)
-      toast.error("Failed to delete task")
-      throw error
+      console.error("Delete task failed", error);
+      toast.error("Could not delete task");
+      throw error;
     }
-  }
+  };
 
-  // Create a new folder
-  const createFolder = async (folder: Omit<Folder, "id" | "createdAt" | "updatedAt" | "userId">): Promise<Folder> => {
-    if (!user) throw new Error("You must be logged in to create folders")
-
+  const createFolder = async (
+    folder: Omit<Folder, "id" | "createdAt" | "updatedAt" | "userId">
+  ): Promise<Folder> => {
+    if (!user) throw new Error("User not authenticated");
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
-
-      const now = new Date().toISOString()
-      const newFolder: Folder = {
-        ...folder,
-        id: generateId(),
-        createdAt: now,
-        updatedAt: now,
-        userId: user.id,
-      }
-
-      // Update local state
-      setFolders((prev) => [...prev, newFolder])
-
-      // Update localStorage
-      const storedFolders = localStorage.getItem("planyze-folders") || "[]"
-      const allFolders = JSON.parse(storedFolders)
-      allFolders.push(newFolder)
-      localStorage.setItem("planyze-folders", JSON.stringify(allFolders))
-
-      toast.success("Folder created successfully")
-      return newFolder
+      const newFolder = await apiCreateFolder(
+        { ...folder, userId: user.id },
+        user.token
+      );
+      setFolders((prev) => [...prev, newFolder]);
+      toast.success("Folder created");
+      return newFolder;
     } catch (error) {
-      console.error("Failed to create folder", error)
-      toast.error("Failed to create folder")
-      throw error
+      console.error("Create folder failed", error);
+      toast.error("Could not create folder");
+      throw error;
     }
-  }
+  };
 
-  // Update an existing folder
-  const updateFolder = async (id: string, folderUpdate: Partial<Folder>): Promise<Folder> => {
-    if (!user) throw new Error("You must be logged in to update folders")
-
+  const updateFolder = async (
+    id: string,
+    updates: Partial<Folder>
+  ): Promise<Folder> => {
+    if (!user) throw new Error("User not authenticated");
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
-
-      // Find the folder to update
-      const folderIndex = folders.findIndex((f) => f.id === id)
-      if (folderIndex === -1) throw new Error("Folder not found")
-
-      // Update the folder
-      const updatedFolder: Folder = {
-        ...folders[folderIndex],
-        ...folderUpdate,
-        updatedAt: new Date().toISOString(),
-      }
-
-      // Update local state
-      const updatedFolders = [...folders]
-      updatedFolders[folderIndex] = updatedFolder
-      setFolders(updatedFolders)
-
-      // Update localStorage
-      const storedFolders = localStorage.getItem("planyze-folders") || "[]"
-      const allFolders = JSON.parse(storedFolders)
-      const globalFolderIndex = allFolders.findIndex((f: Folder) => f.id === id)
-      if (globalFolderIndex !== -1) {
-        allFolders[globalFolderIndex] = updatedFolder
-        localStorage.setItem("planyze-folders", JSON.stringify(allFolders))
-      }
-
-      toast.success("Folder updated successfully")
-      return updatedFolder
+      const updatedFolder = await apiUpdateFolder(id, updates, user.token);
+      setFolders((prev) =>
+        prev.map((folder) => (folder.id === id ? updatedFolder : folder))
+      );
+      toast.success("Folder updated");
+      return updatedFolder;
     } catch (error) {
-      console.error("Failed to update folder", error)
-      toast.error("Failed to update folder")
-      throw error
+      console.error("Update folder failed", error);
+      toast.error("Could not update folder");
+      throw error;
     }
-  }
+  };
 
-  // Delete a folder
   const deleteFolder = async (id: string): Promise<void> => {
-    if (!user) throw new Error("You must be logged in to delete folders")
-
+    if (!user) throw new Error("User not authenticated");
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
-
-      // Check if folder has tasks
-      const folderTasks = tasks.filter((task) => task.folderId === id)
-      if (folderTasks.length > 0) {
-        throw new Error("Cannot delete folder with tasks. Move or delete the tasks first.")
-      }
-
-      // Update local state
-      setFolders((prev) => prev.filter((folder) => folder.id !== id))
-
-      // Update localStorage
-      const storedFolders = localStorage.getItem("planyze-folders") || "[]"
-      const allFolders = JSON.parse(storedFolders)
-      const updatedFolders = allFolders.filter((folder: Folder) => folder.id !== id)
-      localStorage.setItem("planyze-folders", JSON.stringify(updatedFolders))
-
-      toast.success("Folder deleted successfully")
+      await apiDeleteFolder(id, user.token);
+      setFolders((prev) => prev.filter((folder) => folder.id !== id));
+      toast.success("Folder deleted");
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-      } else {
-        console.error("Failed to delete folder", error)
-        toast.error("Failed to delete folder")
-      }
-      throw error
+      console.error("Delete folder failed", error);
+      toast.error("Could not delete folder");
+      throw error;
     }
-  }
+  };
 
-  // Move a task to a different folder
   const moveTask = async (taskId: string, folderId: string): Promise<Task> => {
-    if (!user) throw new Error("You must be logged in to move tasks")
-
+    if (!user) throw new Error("User not authenticated");
     try {
-      // Find the task to move
-      const taskIndex = tasks.findIndex((t) => t.id === taskId)
-      if (taskIndex === -1) throw new Error("Task not found")
-
-      // Update the task
-      const updatedTask: Task = {
-        ...tasks[taskIndex],
-        folderId,
-        updatedAt: new Date().toISOString(),
-      }
-
-      // Update local state
-      const updatedTasks = [...tasks]
-      updatedTasks[taskIndex] = updatedTask
-      setTasks(updatedTasks)
-
-      // Update localStorage
-      const storedTasks = localStorage.getItem("planyze-tasks") || "[]"
-      const allTasks = JSON.parse(storedTasks)
-      const globalTaskIndex = allTasks.findIndex((t: Task) => t.id === taskId)
-      if (globalTaskIndex !== -1) {
-        allTasks[globalTaskIndex] = updatedTask
-        localStorage.setItem("planyze-tasks", JSON.stringify(allTasks))
-      }
-
-      toast.success("Task moved successfully")
-      return updatedTask
+      const updatedTask = await apiMoveTask(taskId, folderId, user.token);
+      setTasks((prev) =>
+        prev.map((task) => (task.id === taskId ? updatedTask : task))
+      );
+      toast.success("Task moved");
+      return updatedTask;
     } catch (error) {
-      console.error("Failed to move task", error)
-      toast.error("Failed to move task")
-      throw error
+      console.error("Move task failed", error);
+      toast.error("Could not move task");
+      throw error;
     }
-  }
+  };
 
-  const value = {
+  const value: TaskContextType = {
     tasks,
     folders,
     isLoading,
@@ -316,15 +186,15 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     updateFolder,
     deleteFolder,
     moveTask,
-  }
+  };
 
-  return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>
+  return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
 }
 
 export function useTasks() {
-  const context = useContext(TaskContext)
-  if (context === undefined) {
-    throw new Error("useTasks must be used within a TaskProvider")
+  const context = useContext(TaskContext);
+  if (!context) {
+    throw new Error("useTasks must be used within a TaskProvider");
   }
-  return context
+  return context;
 }

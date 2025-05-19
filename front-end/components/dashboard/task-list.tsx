@@ -217,7 +217,7 @@ export function TaskList({
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="space-y-3">
-          {folders.map((folder) => (
+          {folders.map((folder: any) => (
             <Droppable
               key={folder.id}
               droppableId={folder.id}
