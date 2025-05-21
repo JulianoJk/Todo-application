@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import type { TaskContextType, Task, Folder } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import {
-  getTasks as fetchTasks,
+  getTasks,
   createTask as apiCreateTask,
   updateTask as apiUpdateTask,
   deleteTask as apiDeleteTask,
@@ -19,6 +19,7 @@ import {
   updateFolder as apiUpdateFolder,
   deleteFolder as apiDeleteFolder,
   moveTaskToFolder as apiMoveTask,
+  getFolders,
 } from "@/lib/api";
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -30,18 +31,24 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      initializeUserData(user.id, user.token);
-    } else {
-      setTasks([]);
-      setFolders([]);
-      setIsLoading(false);
-    }
+    if (user) loadData(user.id, user.token);
+    else resetData();
   }, [user]);
 
-  const initializeUserData = async (userId: string, token: string) => {
+  const resetData = () => {
+    setTasks([]);
+    setFolders([]);
+    setIsLoading(false);
+  };
+
+  const loadData = async (userId: string, token: string) => {
     setIsLoading(true);
     try {
+      const fetchedTasks = await getTasks(userId, token);
+      setTasks(fetchedTasks);
+      const storedFolder = await getFolders(userId, token);
+      console.log("storedFolder", storedFolder);
+
       const storedFolders = JSON.parse(
         localStorage.getItem("planyze-folders") || "[]"
       );
@@ -50,11 +57,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       );
       setFolders(userFolders);
 
-      const userTasks = await fetchTasks(userId, token);
-      setTasks(userTasks);
       toast.success("Tasks loaded successfully");
     } catch (error) {
-      console.error("Failed to load user data", error);
+      console.error("Failed to load data", error);
       toast.error("Failed to load tasks or folders");
     } finally {
       setIsLoading(false);
@@ -66,8 +71,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   ): Promise<Task> => {
     if (!user) throw new Error("User not authenticated");
     try {
-      const taskWithUser = { ...task, userId: user.id };
-      const newTask = await apiCreateTask(taskWithUser, user.token);
+      const newTask = await apiCreateTask(
+        { ...task, userId: user.id },
+        user.token
+      );
       setTasks((prev) => [...prev, newTask]);
       toast.success("Task created");
       return newTask;

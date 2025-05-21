@@ -1,3 +1,4 @@
+import { log } from "node:console";
 import type { AuthUser, Task, Folder } from "./types";
 
 // Base API URL - should be configured from environment variables in production
@@ -6,10 +7,7 @@ const API_BASE_URL =
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
-  const contentType = response.headers.get("content-type");
-
-  const isJSON = contentType?.includes("application/json");
-  const data = isJSON ? await response.json() : null;
+  const data = await response.json();
 
   if (!response.ok) {
     const message =
@@ -17,7 +15,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     throw new Error(message);
   }
 
-  return data as T;
+  return data;
 }
 
 // Helper function to make authenticated requests
@@ -102,9 +100,13 @@ export async function getTasks(userId: string, token: string): Promise<Task[]> {
     undefined,
     token
   );
-  console.log("HUAHDSAOUDSAOU:", response);
+  const data = await handleResponse<Task[]>(response);
 
-  return handleResponse<Task[]>(response);
+  // Map _id to id
+  return data.map((task: any) => ({
+    ...task,
+    id: task._id,
+  }));
 }
 
 /**

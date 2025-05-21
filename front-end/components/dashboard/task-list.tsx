@@ -49,6 +49,7 @@ export function TaskList({
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.trim()) return;
+    console.log(folders);
 
     try {
       await createTask({
@@ -56,6 +57,7 @@ export function TaskList({
         completed: false,
         priority: "none",
         folderId: folder?.id || folders[0]?.id,
+        description: "",
       });
       setNewTask("");
       setIsAddingTask(false);
@@ -214,7 +216,7 @@ export function TaskList({
           </div>
         </form>
       )}
-
+      {/* TODO!: Here is the part for the tasks */}
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="space-y-3">
           {folders.map((folder: any) => (
