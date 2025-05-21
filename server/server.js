@@ -19,6 +19,7 @@ connectDB();
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/folders", require("./routes/folder.routes"));
 
 // Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

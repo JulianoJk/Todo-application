@@ -1,6 +1,7 @@
 const User = require("../models/user.model");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Folder = require("../models/folder.model");
 
 exports.testRoute = (_, res) => res.send("Test route");
 
@@ -42,15 +43,25 @@ exports.registerUser = async (req, res) => {
 
   const savedUser = await newUser.save();
 
+  // 🆕 Create default folder
+  const inboxFolder = new Folder({
+    name: "Inbox",
+    color: "bg-violet-500",
+    userId: savedUser._id.toString(),
+  });
+  await inboxFolder.save();
+
   const token = jwt.sign(
     { id: savedUser._id, username: savedUser.username },
     process.env.JWT_KEY,
     { expiresIn: "1h" }
   );
 
-  res
-    .status(201)
-    .json({ token, username: savedUser.username, id: savedUser._id });
+  res.status(201).json({
+    token,
+    username: savedUser.username,
+    id: savedUser._id,
+  });
 };
 
 exports.loginUser = async (req, res) => {
