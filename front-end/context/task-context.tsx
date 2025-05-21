@@ -46,12 +46,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     try {
       const fetchedTasks = await getTasks(userId, token);
       setTasks(fetchedTasks);
-      const storedFolder = await getFolders(userId, token);
-      console.log("storedFolder", storedFolder);
+      const storedFolders = await getFolders(userId, token);
 
-      const storedFolders = JSON.parse(
-        localStorage.getItem("planyze-folders") || "[]"
-      );
       const userFolders = storedFolders.filter(
         (folder: Folder) => folder.userId === userId
       );
