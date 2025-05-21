@@ -87,6 +87,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   ): Promise<Task> => {
     if (!user) throw new Error("User not authenticated");
     try {
+      console.log("Updating task with ID:", id, "and updates:", updates);
+
       const updated = await apiUpdateTask(id, updates, user.token);
       setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
       toast.success("Task updated");

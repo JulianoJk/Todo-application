@@ -129,14 +129,14 @@ export async function createTask(
  * Update an existing task
  */
 export async function updateTask(
-  taskId: string,
+  _id: string,
   updates: Partial<Task>,
   token: string
 ): Promise<Task> {
   const response = await authenticatedRequest(
     "/tasks/update",
     "PUT",
-    { taskId, ...updates },
+    { _id, ...updates },
     token
   );
   return handleResponse<Task>(response);
@@ -145,11 +145,11 @@ export async function updateTask(
 /**
  * Delete a task
  */
-export async function deleteTask(taskId: string, token: string): Promise<void> {
+export async function deleteTask(_id: string, token: string): Promise<void> {
   const response = await authenticatedRequest(
     "/tasks/delete",
     "DELETE",
-    { taskId },
+    { _id },
     token
   );
   return handleResponse<void>(response);
