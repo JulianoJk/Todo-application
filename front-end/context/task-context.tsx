@@ -24,16 +24,7 @@ import {
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
-const SYSTEM_FOLDERS: Record<
-  "inbox" | "today" | "important",
-  {
-    name: string;
-    color: string;
-    icon: string;
-  }
-> = {
-  inbox: { name: "Inbox", color: "bg-violet-500", icon: "📥" },
-  today: { name: "Today", color: "bg-blue-500", icon: "📅" },
+const SYSTEM_FOLDERS = {
   important: { name: "Important", color: "bg-yellow-500", icon: "⭐" },
 };
 
@@ -111,7 +102,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           ...task,
           userId: user.id,
           folderId: task.folderId ?? fallbackInbox!.id,
-          _id: ""
+          _id: "",
         },
         user.token
       );

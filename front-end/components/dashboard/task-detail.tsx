@@ -20,8 +20,10 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
     "none"
   );
   const [dueDate, setDueDate] = useState("");
+  const [selectedFolderId, setSelectedFolderId] = useState("");
   const [newLabel, setNewLabel] = useState("");
   const [isAddingLabel, setIsAddingLabel] = useState(false);
+
   const { tasks, folders, updateTask, deleteTask } = useTasks();
 
   const modalRef = useRef<HTMLDivElement>(null);
@@ -42,19 +44,20 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
       setDescription(foundTask.description || "");
       setPriority(foundTask.priority);
       setDueDate(formattedDate);
+      setSelectedFolderId(foundTask.folderId);
     }
   }, [taskId, tasks]);
 
   // Close on click outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         modalRef.current &&
         !modalRef.current.contains(event.target as Node)
       ) {
         onClose();
       }
-    }
+    };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
@@ -72,16 +75,17 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
     if (description !== task.description) updates.description = description;
     if (priority !== task.priority) updates.priority = priority;
     if (newDueDateISO !== originalISO) updates.dueDate = newDueDateISO;
+    if (selectedFolderId !== task.folderId) updates.folderId = selectedFolderId;
 
     if (Object.keys(updates).length === 0) {
-      onClose(); // No changes, just close
+      onClose();
       return;
     }
 
     try {
       await updateTask(taskId, updates);
       toast.success("Task updated successfully");
-      onClose(); // Close on successful save
+      onClose();
     } catch (error) {
       console.error("Failed to update task", error);
       toast.error("Failed to update task");
@@ -143,8 +147,6 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
     }
   };
 
-  const currentFolder = folders.find((f) => f.id === task.folderId);
-
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 animate-fade-in">
       <div
@@ -178,16 +180,15 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
           <div>
             <label
               htmlFor="title"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
             >
               Title
             </label>
             <input
               id="title"
-              type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900 transition-colors"
+              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 border-gray-300 dark:border-gray-600 focus:ring-violet-200 dark:focus:ring-violet-800 focus:outline-none"
             />
           </div>
 
@@ -195,7 +196,7 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
           <div>
             <label
               htmlFor="description"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
             >
               Description
             </label>
@@ -204,7 +205,7 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900 transition-colors"
+              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 border-gray-300 dark:border-gray-600 focus:ring-violet-200 dark:focus:ring-violet-800 focus:outline-none"
             />
           </div>
 
@@ -221,7 +222,7 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
                 id="priority"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as any)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900 transition-colors"
+                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800"
               >
                 <option value="none">None</option>
                 <option value="low">Low</option>
@@ -229,6 +230,7 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
                 <option value="high">High</option>
               </select>
             </div>
+
             <div>
               <label
                 htmlFor="dueDate"
@@ -241,21 +243,43 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900 transition-colors"
+                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800"
               />
             </div>
+          </div>
+
+          {/* Folder Selector */}
+          <div>
+            <label
+              htmlFor="folder"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Folder
+            </label>
+            <select
+              id="folder"
+              value={selectedFolderId}
+              onChange={(e) => setSelectedFolderId(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800"
+            >
+              {folders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Labels */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Labels
               </label>
               {!isAddingLabel && (
                 <button
                   onClick={() => setIsAddingLabel(true)}
-                  className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 flex items-center gap-1 transition-colors"
+                  className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 flex items-center gap-1"
                 >
                   <PlusIcon className="h-3 w-3" />
                   Add Label
@@ -268,8 +292,8 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
                   type="text"
                   value={newLabel}
                   onChange={(e) => setNewLabel(e.target.value)}
-                  placeholder="Enter label name"
-                  className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-900"
+                  placeholder="Enter label"
+                  className="flex-1 px-3 py-1 text-sm border rounded-lg bg-white dark:bg-slate-900 border-gray-300 dark:border-gray-600"
                 />
                 <button
                   onClick={handleAddLabel}
@@ -293,13 +317,13 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
                 task.labels.map((label) => (
                   <div
                     key={label}
-                    className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full group hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full group hover:bg-gray-200 dark:hover:bg-gray-600"
                   >
                     <TagIcon className="h-3 w-3" />
                     <span>{label}</span>
                     <button
                       onClick={() => handleRemoveLabel(label)}
-                      className="ml-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="ml-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100"
                     >
                       <XIcon className="h-3 w-3" />
                     </button>
@@ -313,29 +337,11 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
             </div>
           </div>
 
-          {/* Folder */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Folder
-            </label>
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  "h-3 w-3 rounded-full",
-                  currentFolder?.color || "bg-gray-400"
-                )}
-              ></div>
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {currentFolder?.name || "Unknown"}
-              </span>
-            </div>
-          </div>
-
           {/* Footer */}
           <div className="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
             <button
               onClick={handleDelete}
-              className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
             >
               <TrashIcon className="h-4 w-4" />
               Delete Task
@@ -349,7 +355,7 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-600 transition-colors"
+                className="px-4 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700"
               >
                 Save Changes
               </button>

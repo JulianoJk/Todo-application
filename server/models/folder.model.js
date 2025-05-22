@@ -9,7 +9,7 @@ const folderSchema = new mongoose.Schema(
     isSystem: { type: Boolean, default: false },
     systemType: {
       type: String,
-      enum: ["inbox", "today", "important"],
+      enum: ["important"],
       default: null,
     },
   },

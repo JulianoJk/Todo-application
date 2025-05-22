@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import {
@@ -34,11 +32,10 @@ export function TaskList({
 }: TaskListProps) {
   const [newTask, setNewTask] = useState("");
   const [isAddingTask, setIsAddingTask] = useState(false);
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [editingTaskText, setEditingTaskText] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const { createTask, updateTask, deleteTask, folders } = useTasks();
   const taskListRef = useRef<HTMLDivElement>(null);
+
   const hasTaskMeta = (task: Task) =>
     Boolean(
       task.dueDate ||
@@ -61,7 +58,6 @@ export function TaskList({
       setNewTask("");
       setIsAddingTask(false);
 
-      // Scroll to bottom of task list after adding
       if (taskListRef.current) {
         setTimeout(() => {
           taskListRef.current?.scrollIntoView({
@@ -83,19 +79,6 @@ export function TaskList({
     }
   };
 
-  const handleEditTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTaskId || !editingTaskText.trim()) return;
-
-    try {
-      await updateTask(editingTaskId, { title: editingTaskText.trim() });
-      setEditingTaskId(null);
-      setEditingTaskText("");
-    } catch (error) {
-      console.error("Failed to update task", error);
-    }
-  };
-
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteTask(taskId);
@@ -103,16 +86,6 @@ export function TaskList({
     } catch (error) {
       console.error("Failed to delete task", error);
     }
-  };
-
-  const startEditingTask = (task: Task) => {
-    setEditingTaskId(task._id);
-    setEditingTaskText(task.title);
-  };
-
-  const cancelEditing = () => {
-    setEditingTaskId(null);
-    setEditingTaskText("");
   };
 
   const getPriorityColor = (priority: string) => {
@@ -130,7 +103,6 @@ export function TaskList({
 
   const getDueDateClass = (dueDate?: string) => {
     if (!dueDate) return "";
-
     const status = getDueDateStatus(dueDate);
     switch (status) {
       case "overdue":
@@ -189,6 +161,7 @@ export function TaskList({
           </div>
         </form>
       )}
+
       <div className="space-y-3">
         {folders.map((folder: any) => (
           <div
@@ -214,134 +187,80 @@ export function TaskList({
                   className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-2 task-item ${
                     task.completed ? "opacity-70" : ""
                   }`}
-                  onClick={() => {
-                    if (editingTaskId !== task._id) {
-                      setSelectedTaskId(task._id);
-                    }
-                  }}
                 >
-                  {editingTaskId === task._id ? (
-                    <form
-                      onSubmit={handleEditTask}
-                      className="flex gap-2"
-                      onClick={(e) => e.stopPropagation()}
+                  <div className="flex items-start gap-3">
+                    <button
+                      onClick={() => handleToggleComplete(task)}
+                      className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center transition-colors ${
+                        task.completed
+                          ? "bg-violet-600 dark:bg-violet-700 border-violet-600 dark:border-violet-700"
+                          : "border-gray-300 dark:border-gray-600 hover:border-violet-500 dark:hover:border-violet-500"
+                      }`}
                     >
-                      <input
-                        type="text"
-                        value={editingTaskText}
-                        onChange={(e) => setEditingTaskText(e.target.value)}
-                        className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900"
-                        autoFocus
-                      />
-                      <button
-                        type="submit"
-                        className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                      {task.completed && (
+                        <CheckIcon className="h-3 w-3 text-white" />
+                      )}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={`text-gray-800 dark:text-gray-200 ${
+                          task.completed
+                            ? "line-through text-gray-500 dark:text-gray-400"
+                            : ""
+                        }`}
                       >
-                        <CheckIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          cancelEditing();
-                        }}
-                        className="p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                      >
-                        <XIcon className="h-5 w-5" />
-                      </button>
-                    </form>
-                  ) : (
-                    <div>
-                      <div className="flex items-start gap-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleComplete(task);
-                          }}
-                          className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center transition-colors ${
-                            task.completed
-                              ? "bg-violet-600 dark:bg-violet-700 border-violet-600 dark:border-violet-700"
-                              : "border-gray-300 dark:border-gray-600 hover:border-violet-500 dark:hover:border-violet-500"
-                          }`}
-                        >
-                          {task.completed && (
-                            <CheckIcon className="h-3 w-3 text-white" />
+                        {task.title}
+                      </p>
+                      {hasTaskMeta(task) && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {task.labels?.map((label, index) => (
+                            <div
+                              key={`${label}-${index}`}
+                              className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded-full"
+                            >
+                              <TagIcon className="h-3 w-3" />
+                              <span>{label}</span>
+                            </div>
+                          ))}
+                          {task.dueDate && (
+                            <div
+                              className={`flex items-center gap-1 text-xs ${getDueDateClass(
+                                task.dueDate
+                              )}`}
+                            >
+                              <CalendarIcon className="h-3 w-3" />
+                              <span>{formatDate(task.dueDate)}</span>
+                            </div>
                           )}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className={`text-gray-800 dark:text-gray-200 ${
-                              task.completed
-                                ? "line-through text-gray-500 dark:text-gray-400"
-                                : ""
-                            }`}
-                          >
-                            {task.title}
-                          </p>
-                          {hasTaskMeta(task) && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {task.labels && task.labels.length > 0 &&
-                                task.labels.map((label, index) => (
-                                  <div
-                                    key={`${label}-${index}`}
-                                    className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded-full"
-                                  >
-                                    <TagIcon className="h-3 w-3" />
-                                    <span>{label}</span>
-                                  </div>
-                                ))}
-
-                              {task.dueDate && (
-                                <div
-                                  className={`flex items-center gap-1 text-xs ${getDueDateClass(
-                                    task.dueDate
-                                  )}`}
-                                >
-                                  <CalendarIcon className="h-3 w-3" />
-                                  <span>{formatDate(task.dueDate)}</span>
-                                </div>
-                              )}
-
-                              {task.priority !== "none" && (
-                                <div
-                                  className={`flex items-center gap-1 text-xs ${getPriorityColor(
-                                    task.priority
-                                  )}`}
-                                >
-                                  <FlagIcon className="h-3 w-3" />
-                                  <span>{task.priority}</span>
-                                </div>
-                              )}
+                          {task.priority !== "none" && (
+                            <div
+                              className={`flex items-center gap-1 text-xs ${getPriorityColor(
+                                task.priority
+                              )}`}
+                            >
+                              <FlagIcon className="h-3 w-3" />
+                              <span>{task.priority}</span>
                             </div>
                           )}
                         </div>
-
-                        <div
-                          className="flex items-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startEditingTask(task);
-                            }}
-                            className="p-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteTask(task._id);
-                            }}
-                            className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
+                      )}
                     </div>
-                  )}
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setSelectedTaskId(task._id)}
+                        className="p-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTask(task._id)}
+                        className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
           </div>

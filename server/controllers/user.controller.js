@@ -10,39 +10,53 @@ exports.getProfile = (req, res) => {
 };
 
 exports.registerUser = async (req, res) => {
-  // after saving user
-  const savedUser = await newUser.save();
+  try {
+    const { username, email, password } = req.body;
 
-  const defaultFolders = [
-    { name: "Inbox", color: "bg-violet-500", icon: "📥", systemType: "inbox" },
-    { name: "Today", color: "bg-blue-500", icon: "📅", systemType: "today" },
-    {
+    // Check if email already exists
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "Email already in use." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Define newUser here
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+    });
+
+    const savedUser = await newUser.save();
+
+    // Create only the "Important" folder
+    const importantFolder = new Folder({
       name: "Important",
       color: "bg-yellow-500",
       icon: "⭐",
       systemType: "important",
-    },
-  ];
+      isSystem: true,
+      userId: savedUser._id.toString(),
+    });
 
-  await Promise.all(
-    defaultFolders.map((folder) =>
-      new Folder({
-        ...folder,
-        userId: savedUser._id.toString(),
-        isSystem: true,
-      }).save()
-    )
-  );
+    const token = jwt.sign(
+      { id: savedUser._id, username: savedUser.username },
+      process.env.JWT_KEY,
+      { expiresIn: "1h" }
+    );
 
-  const token = jwt.sign(
-    { id: savedUser._id, username: savedUser.username },
-    process.env.JWT_KEY,
-    { expiresIn: "1h" }
-  );
-  res
-    .status(201)
-    .json({ token, username: savedUser.username, id: savedUser._id });
+    res.status(201).json({
+      token,
+      username: savedUser.username,
+      id: savedUser._id,
+    });
+  } catch (error) {
+    console.error("Register error:", error);
+    res.status(500).json({ message: "Something went wrong." });
+  }
 };
+
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
   console.log("Login attempt:", { email, password });
