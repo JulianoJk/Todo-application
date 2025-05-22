@@ -94,7 +94,7 @@ export function Dashboard() {
     if (user && tasks.length === 0 && !loading) {
       const demoTasks: Task[] = [
         {
-          id: "task1",
+          _id: "task1",
           title: "Welcome...",
           completed: false,
           userId: user.id,
@@ -106,7 +106,7 @@ export function Dashboard() {
           labels: [],
         },
         {
-          id: "task2",
+          _id: "task2",
           title: "Try dragging tasks...",
           completed: false,
           userId: user.id,
@@ -118,7 +118,7 @@ export function Dashboard() {
           labels: [],
         },
         {
-          id: "task3",
+          _id: "task3",
           title: "Create a new task...",
           completed: true,
           userId: user.id,
@@ -168,7 +168,7 @@ export function Dashboard() {
     try {
       // For demo purposes, create a task without API call
       const newTaskObj: Task = {
-        id: `task-${Date.now()}`,
+        _id: `task-${Date.now()}`,
         title: newTask,
         completed: false,
         userId: user.id,
@@ -195,7 +195,7 @@ export function Dashboard() {
       // For demo purposes, update task without API call
       setTasks(
         tasks.map((task) =>
-          task.id === taskId ? { ...task, completed: !completed } : task
+          task._id === taskId ? { ...task, completed: !completed } : task
         )
       );
     } catch (error) {
@@ -213,7 +213,7 @@ export function Dashboard() {
 
     try {
       // For demo purposes, delete task without API call
-      setTasks(tasks.filter((task) => task.id !== taskToDelete));
+      setTasks(tasks.filter((task) => task._id !== taskToDelete));
       toast.success("Task deleted successfully");
       setIsDeleteModalOpen(false);
       setTaskToDelete(null);
@@ -235,7 +235,7 @@ export function Dashboard() {
       // For demo purposes, edit task without API call
       setTasks(
         tasks.map((task) =>
-          task.id === editingTaskId ? { ...task, title: editingTaskText } : task
+          task._id === editingTaskId ? { ...task, title: editingTaskText } : task
         )
       );
       setEditingTaskId(null);
@@ -709,16 +709,16 @@ export function Dashboard() {
               <div className="space-y-3">
                 {filteredTasks.map((task) => (
                   <div
-                    key={task.id}
+                    key={task._id}
                     className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 transition-all duration-200 ${
                       task.completed ? "opacity-70" : ""
                     } ${
-                      editingTaskId === task.id
+                      editingTaskId === task._id
                         ? "ring-2 ring-violet-200 dark:ring-violet-800"
                         : ""
                     }`}
                   >
-                    {editingTaskId === task.id ? (
+                    {editingTaskId === task._id ? (
                       <form onSubmit={handleEditTask} className="flex gap-2">
                         <input
                           type="text"
@@ -747,7 +747,7 @@ export function Dashboard() {
                           <div className="flex-shrink-0 pt-0.5">
                             <button
                               onClick={() =>
-                                handleToggleComplete(task.id, task.completed)
+                                handleToggleComplete(task._id, task.completed)
                               }
                               className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                                 task.completed
@@ -778,7 +778,7 @@ export function Dashboard() {
                         <div className="flex items-center gap-1 ml-2">
                           <button
                             onClick={() =>
-                              startEditingTask(task.id, task.title)
+                              startEditingTask(task._id, task.title)
                             }
                             className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                             aria-label="Edit task"
@@ -786,7 +786,7 @@ export function Dashboard() {
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => confirmDeleteTask(task.id)}
+                            onClick={() => confirmDeleteTask(task._id)}
                             className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
                             aria-label="Delete task"
                           >

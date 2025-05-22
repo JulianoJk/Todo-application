@@ -24,7 +24,7 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
 
   // Load task data
   useEffect(() => {
-    const foundTask = tasks.find((t) => t.id === taskId)
+    const foundTask = tasks.find((t) => t._id === taskId)
     if (foundTask) {
       setTask(foundTask)
       setTitle(foundTask.title)
