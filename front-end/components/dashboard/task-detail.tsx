@@ -1,117 +1,156 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { toast } from "sonner"
-import { XIcon, PlusIcon, CheckIcon, TagIcon, TrashIcon } from "lucide-react"
-import { useTasks } from "@/context/task-context"
-import type { Task } from "@/lib/types"
-import { cn } from "@/lib/utils"
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { XIcon, PlusIcon, CheckIcon, TagIcon, TrashIcon } from "lucide-react";
+import { useTasks } from "@/context/task-context";
+import type { Task } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface TaskDetailProps {
-  taskId: string
-  onClose: () => void
+  taskId: string;
+  onClose: () => void;
 }
 
 export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
-  const [task, setTask] = useState<Task | null>(null)
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [priority, setPriority] = useState<"none" | "low" | "medium" | "high">("none")
-  const [dueDate, setDueDate] = useState("")
-  const [newLabel, setNewLabel] = useState("")
-  const [isAddingLabel, setIsAddingLabel] = useState(false)
-  const { tasks, folders, updateTask, deleteTask } = useTasks()
+  const [task, setTask] = useState<Task | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<"none" | "low" | "medium" | "high">(
+    "none"
+  );
+  const [dueDate, setDueDate] = useState("");
+  const [newLabel, setNewLabel] = useState("");
+  const [isAddingLabel, setIsAddingLabel] = useState(false);
+  const { tasks, folders, updateTask, deleteTask } = useTasks();
+
+  const modalRef = useRef<HTMLDivElement>(null);
+  const originalDueDateRef = useRef("");
 
   // Load task data
   useEffect(() => {
-    const foundTask = tasks.find((t) => t._id === taskId)
+    const foundTask = tasks.find((t) => t._id === taskId);
     if (foundTask) {
-      setTask(foundTask)
-      setTitle(foundTask.title)
-      setDescription(foundTask.description || "")
-      setPriority(foundTask.priority)
-      setDueDate(foundTask.dueDate ? new Date(foundTask.dueDate).toISOString().split("T")[0] : "")
-    }
-  }, [taskId, tasks])
+      const formattedDate = foundTask.dueDate
+        ? new Date(foundTask.dueDate).toISOString().split("T")[0]
+        : "";
 
-  if (!task) return null
+      originalDueDateRef.current = formattedDate;
+
+      setTask(foundTask);
+      setTitle(foundTask.title);
+      setDescription(foundTask.description || "");
+      setPriority(foundTask.priority);
+      setDueDate(formattedDate);
+    }
+  }, [taskId, tasks]);
+
+  // Close on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  if (!task) return null;
 
   const handleSave = async () => {
-    try {
-      await updateTask(taskId, {
-        title,
-        description,
-        priority,
-        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-      })
-      toast.success("Task updated successfully")
-    } catch (error) {
-      console.error("Failed to update task", error)
-      toast.error("Failed to update task")
+    const newDueDateISO = dueDate ? new Date(dueDate).toISOString() : undefined;
+    const originalISO = originalDueDateRef.current
+      ? new Date(originalDueDateRef.current).toISOString()
+      : undefined;
+
+    const updates: Partial<Task> = {};
+    if (title !== task.title) updates.title = title;
+    if (description !== task.description) updates.description = description;
+    if (priority !== task.priority) updates.priority = priority;
+    if (newDueDateISO !== originalISO) updates.dueDate = newDueDateISO;
+
+    if (Object.keys(updates).length === 0) {
+      onClose(); // No changes, just close
+      return;
     }
-  }
+
+    try {
+      await updateTask(taskId, updates);
+      toast.success("Task updated successfully");
+      onClose(); // Close on successful save
+    } catch (error) {
+      console.error("Failed to update task", error);
+      toast.error("Failed to update task");
+    }
+  };
 
   const handleDelete = async () => {
     try {
-      await deleteTask(taskId)
-      toast.success("Task deleted successfully")
-      onClose()
+      await deleteTask(taskId);
+      toast.success("Task deleted successfully");
+      onClose();
     } catch (error) {
-      console.error("Failed to delete task", error)
-      toast.error("Failed to delete task")
+      console.error("Failed to delete task", error);
+      toast.error("Failed to delete task");
     }
-  }
+  };
 
   const handleAddLabel = async () => {
-    if (!newLabel.trim()) return
+    if (!newLabel.trim()) return;
 
     try {
-      const currentLabels = task.labels || []
+      const currentLabels = task.labels || [];
       if (currentLabels.includes(newLabel.trim())) {
-        toast.error("Label already exists")
-        return
+        toast.error("Label already exists");
+        return;
       }
 
       await updateTask(taskId, {
         labels: [...currentLabels, newLabel.trim()],
-      })
-      setNewLabel("")
-      setIsAddingLabel(false)
-      toast.success("Label added successfully")
+      });
+      setNewLabel("");
+      setIsAddingLabel(false);
+      toast.success("Label added successfully");
     } catch (error) {
-      console.error("Failed to add label", error)
-      toast.error("Failed to add label")
+      console.error("Failed to add label", error);
+      toast.error("Failed to add label");
     }
-  }
+  };
 
   const handleRemoveLabel = async (label: string) => {
     try {
-      const currentLabels = task.labels || []
+      const currentLabels = task.labels || [];
       await updateTask(taskId, {
         labels: currentLabels.filter((l) => l !== label),
-      })
-      toast.success("Label removed successfully")
+      });
+      toast.success("Label removed successfully");
     } catch (error) {
-      console.error("Failed to remove label", error)
-      toast.error("Failed to remove label")
+      console.error("Failed to remove label", error);
+      toast.error("Failed to remove label");
     }
-  }
+  };
 
   const handleToggleComplete = async () => {
     try {
-      await updateTask(taskId, { completed: !task.completed })
+      await updateTask(taskId, { completed: !task.completed });
     } catch (error) {
-      console.error("Failed to update task", error)
-      toast.error("Failed to update task")
+      console.error("Failed to update task", error);
+      toast.error("Failed to update task");
     }
-  }
+  };
 
-  // Find the current folder
-  const currentFolder = folders.find((f) => f.id === task.folderId)
+  const currentFolder = folders.find((f) => f.id === task.folderId);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in">
+      <div
+        ref={modalRef}
+        className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in"
+      >
         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
           <div className="flex items-center gap-3">
             <button
@@ -135,8 +174,12 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Title */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Title
             </label>
             <input
@@ -144,37 +187,40 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              onBlur={handleSave}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900 transition-colors"
             />
           </div>
 
+          {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Description
             </label>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              onBlur={handleSave}
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900 transition-colors"
             />
           </div>
 
+          {/* Priority & Due Date */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="priority"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Priority
               </label>
               <select
                 id="priority"
                 value={priority}
-                onChange={(e) => {
-                  setPriority(e.target.value as "none" | "low" | "medium" | "high")
-                  handleSave()
-                }}
+                onChange={(e) => setPriority(e.target.value as any)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900 transition-colors"
               >
                 <option value="none">None</option>
@@ -183,27 +229,29 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
                 <option value="high">High</option>
               </select>
             </div>
-
             <div>
-              <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="dueDate"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Due Date
               </label>
               <input
                 id="dueDate"
                 type="date"
                 value={dueDate}
-                onChange={(e) => {
-                  setDueDate(e.target.value)
-                  handleSave()
-                }}
+                onChange={(e) => setDueDate(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900 transition-colors"
               />
             </div>
           </div>
 
+          {/* Labels */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Labels</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Labels
+              </label>
               {!isAddingLabel && (
                 <button
                   onClick={() => setIsAddingLabel(true)}
@@ -214,7 +262,6 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
                 </button>
               )}
             </div>
-
             {isAddingLabel && (
               <div className="flex gap-2 mb-2">
                 <input
@@ -222,28 +269,27 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
                   value={newLabel}
                   onChange={(e) => setNewLabel(e.target.value)}
                   placeholder="Enter label name"
-                  className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-800 focus:border-violet-500 dark:focus:border-violet-500 bg-white dark:bg-slate-900"
+                  className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-900"
                 />
                 <button
                   onClick={handleAddLabel}
-                  className="px-3 py-1 text-sm bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-600 text-white rounded-lg transition-colors"
+                  className="px-3 py-1 text-sm bg-violet-600 text-white rounded-lg"
                 >
                   Add
                 </button>
                 <button
                   onClick={() => {
-                    setIsAddingLabel(false)
-                    setNewLabel("")
+                    setIsAddingLabel(false);
+                    setNewLabel("");
                   }}
-                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="px-3 py-1 text-sm border text-gray-700 dark:text-gray-300 rounded-lg"
                 >
                   Cancel
                 </button>
               </div>
             )}
-
             <div className="flex flex-wrap gap-2 mt-2">
-              {task.labels && task.labels.length > 0 ? (
+              {task.labels?.length ? (
                 task.labels.map((label) => (
                   <div
                     key={label}
@@ -260,19 +306,32 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No labels added yet</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  No labels added yet
+                </p>
               )}
             </div>
           </div>
 
+          {/* Folder */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Folder</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Folder
+            </label>
             <div className="flex items-center gap-2">
-              <div className={cn("h-3 w-3 rounded-full", currentFolder?.color || "bg-gray-400")}></div>
-              <span className="text-sm text-gray-700 dark:text-gray-300">{currentFolder?.name || "Unknown"}</span>
+              <div
+                className={cn(
+                  "h-3 w-3 rounded-full",
+                  currentFolder?.color || "bg-gray-400"
+                )}
+              ></div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {currentFolder?.name || "Unknown"}
+              </span>
             </div>
           </div>
 
+          {/* Footer */}
           <div className="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
             <button
               onClick={handleDelete}
@@ -284,13 +343,13 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 text-sm border text-gray-700 dark:text-gray-300 rounded-lg"
               >
                 Close
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 text-sm bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-600 text-white rounded-lg transition-colors"
+                className="px-4 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-600 transition-colors"
               >
                 Save Changes
               </button>
@@ -299,5 +358,5 @@ export function TaskDetail({ taskId, onClose }: TaskDetailProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

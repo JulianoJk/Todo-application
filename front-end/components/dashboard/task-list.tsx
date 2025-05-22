@@ -39,12 +39,16 @@ export function TaskList({
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const { createTask, updateTask, deleteTask, folders } = useTasks();
   const taskListRef = useRef<HTMLDivElement>(null);
-  console.log("tasks", tasks);
+  const hasTaskMeta = (task: Task) =>
+    Boolean(
+      task.dueDate ||
+        task.priority !== "none" ||
+        (task.labels && task.labels.length > 0)
+    );
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.trim()) return;
-    console.log(folders);
 
     try {
       await createTask({
@@ -274,25 +278,19 @@ export function TaskList({
                           >
                             {task.title}
                           </p>
-
-                          {(task.dueDate ||
-                            task.priority !== "none" ||
-                            task.labels?.length) && (
+                          {hasTaskMeta(task) && (
                             <div className="flex flex-wrap gap-2 mt-2">
-                              {task.labels?.map(
-                                (
-                                  label,
-                                  index // <-- Modified this line
-                                ) => (
+                              {task.labels && task.labels.length > 0 &&
+                                task.labels.map((label, index) => (
                                   <div
-                                    key={`${label}-${index}`} // <-- Changed key here
+                                    key={`${label}-${index}`}
                                     className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded-full"
                                   >
                                     <TagIcon className="h-3 w-3" />
                                     <span>{label}</span>
                                   </div>
-                                )
-                              )}
+                                ))}
+
                               {task.dueDate && (
                                 <div
                                   className={`flex items-center gap-1 text-xs ${getDueDateClass(
