@@ -6,6 +6,12 @@ const folderSchema = new mongoose.Schema(
     color: { type: String, required: true },
     icon: { type: String },
     userId: { type: String, required: true },
+    isSystem: { type: Boolean, default: false },
+    systemType: {
+      type: String,
+      enum: ["inbox", "today", "important"],
+      default: null,
+    },
   },
   { timestamps: true }
 );

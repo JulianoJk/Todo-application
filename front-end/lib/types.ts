@@ -13,8 +13,9 @@ export interface AuthUser extends User {
 
 // Task types
 export interface Task {
-  id: string;
+  _id: string; // Optional for compatibility with MongoDB
   title: string;
+  name?: string; // Optional if you want to use name instead of title
   description?: string;
   completed: boolean;
   priority: "low" | "medium" | "high" | "none";
@@ -33,6 +34,8 @@ export interface Folder {
   color: string;
   icon?: string;
   userId: string;
+  isSystem?: boolean; // optional, true if this is a main/system folder
+  systemType?: "inbox" | "today" | "important"; // used for logic mapping
   createdAt: string;
   updatedAt: string;
 }
@@ -58,7 +61,7 @@ export interface TaskContextType {
   folders: Folder[];
   isLoading: boolean;
   createTask: (
-    task: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId">
+    task: Omit<Task, "_id" | "createdAt" | "updatedAt" | "userId">
   ) => Promise<Task>;
   updateTask: (id: string, task: Partial<Task>) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
@@ -68,4 +71,8 @@ export interface TaskContextType {
   updateFolder: (id: string, folder: Partial<Folder>) => Promise<Folder>;
   deleteFolder: (id: string) => Promise<void>;
   moveTask: (taskId: string, folderId: string) => Promise<Task>;
+
+  // 👇 Add these
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  loading?: boolean;
 }

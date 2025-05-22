@@ -105,7 +105,7 @@ export async function getTasks(userId: string, token: string): Promise<Task[]> {
   // Map _id to id
   return data.map((task: any) => ({
     ...task,
-    id: task._id,
+    id: task.id,
   }));
 }
 

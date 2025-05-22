@@ -24,6 +24,19 @@ import {
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
+const SYSTEM_FOLDERS: Record<
+  "inbox" | "today" | "important",
+  {
+    name: string;
+    color: string;
+    icon: string;
+  }
+> = {
+  inbox: { name: "Inbox", color: "bg-violet-500", icon: "📥" },
+  today: { name: "Today", color: "bg-blue-500", icon: "📅" },
+  important: { name: "Important", color: "bg-yellow-500", icon: "⭐" },
+};
+
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -46,14 +59,34 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     try {
       const fetchedTasks = await getTasks(userId, token);
       setTasks(fetchedTasks);
-      const storedFolders = await getFolders(userId, token);
 
-      const userFolders = storedFolders.filter(
-        (folder: Folder) => folder.userId === userId
-      );
-      setFolders(userFolders);
+      const allFolders = await getFolders(userId, token);
+      const userFolders = allFolders.filter((f) => f.userId === userId);
 
-      toast.success("Tasks loaded successfully");
+      const ensuredSystemFolders: Folder[] = (
+        Object.entries(SYSTEM_FOLDERS) as [
+          "inbox" | "today" | "important",
+          { name: string; color: string; icon: string }
+        ][]
+      ).map(([type, meta]) => {
+        const existing = userFolders.find((f) => f.systemType === type);
+        if (existing) return existing;
+
+        return {
+          id: `system-${type}`,
+          userId,
+          isSystem: true,
+          systemType: type,
+          name: meta.name,
+          color: meta.color,
+          icon: meta.icon,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+
+      setFolders([...ensuredSystemFolders, ...userFolders]);
+      toast.success("Tasks and folders loaded successfully");
     } catch (error) {
       console.error("Failed to load data", error);
       toast.error("Failed to load tasks or folders");
@@ -63,12 +96,23 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   };
 
   const createTask = async (
-    task: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId">
+    task: Omit<Task, "_id" | "createdAt" | "updatedAt" | "userId">
   ): Promise<Task> => {
     if (!user) throw new Error("User not authenticated");
+
+    const fallbackInbox = folders.find((f) => f.systemType === "inbox");
+    if (!task.folderId && !fallbackInbox?.id) {
+      throw new Error("No folder specified and default inbox not found.");
+    }
+
     try {
       const newTask = await apiCreateTask(
-        { ...task, userId: user.id },
+        {
+          ...task,
+          userId: user.id,
+          folderId: task.folderId ?? fallbackInbox!.id,
+          _id: ""
+        },
         user.token
       );
       setTasks((prev) => [...prev, newTask]);
@@ -87,10 +131,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   ): Promise<Task> => {
     if (!user) throw new Error("User not authenticated");
     try {
-      console.log("Updating task with ID:", id, "and updates:", updates);
-
       const updated = await apiUpdateTask(id, updates, user.token);
-      setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
+      setTasks((prev) =>
+        prev.map((task) => (task._id === id ? updated : task))
+      );
       toast.success("Task updated");
       return updated;
     } catch (error) {
@@ -104,7 +148,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     if (!user) throw new Error("User not authenticated");
     try {
       await apiDeleteTask(id, user.token);
-      setTasks((prev) => prev.filter((task) => task.id !== id));
+      setTasks((prev) => prev.filter((task) => task._id !== id));
       toast.success("Task deleted");
     } catch (error) {
       console.error("Delete task failed", error);
@@ -169,7 +213,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     try {
       const updatedTask = await apiMoveTask(taskId, folderId, user.token);
       setTasks((prev) =>
-        prev.map((task) => (task.id === taskId ? updatedTask : task))
+        prev.map((task) => (task._id === taskId ? updatedTask : task))
       );
       toast.success("Task moved");
       return updatedTask;
@@ -191,6 +235,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     updateFolder,
     deleteFolder,
     moveTask,
+    setTasks,
+    loading: isLoading,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

@@ -10,60 +10,39 @@ exports.getProfile = (req, res) => {
 };
 
 exports.registerUser = async (req, res) => {
-  const { email, password, confirmPassword, username } = req.body;
-  console.log("Register attempt:", {
-    email,
-    password,
-    confirmPassword,
-    username,
-  });
-  if (!email || !password || !confirmPassword)
-    return res.status(400).json({ message: "All fields are required." });
-
-  if (password.length < 5)
-    return res
-      .status(400)
-      .json({ message: "Password must be at least 5 characters." });
-
-  if (password !== confirmPassword)
-    return res.status(400).json({ message: "Passwords do not match." });
-
-  const existingUser = await User.findOne({ email });
-  if (existingUser)
-    return res.status(409).json({ message: "Email already in use." });
-
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  const newUser = new User({
-    email,
-    password: hashedPassword,
-    username: username || email,
-  });
-
+  // after saving user
   const savedUser = await newUser.save();
 
-  // 🆕 Create default folder
-  const inboxFolder = new Folder({
-    name: "Inbox",
-    color: "bg-violet-500",
-    userId: savedUser._id.toString(),
-  });
-  await inboxFolder.save();
+  const defaultFolders = [
+    { name: "Inbox", color: "bg-violet-500", icon: "📥", systemType: "inbox" },
+    { name: "Today", color: "bg-blue-500", icon: "📅", systemType: "today" },
+    {
+      name: "Important",
+      color: "bg-yellow-500",
+      icon: "⭐",
+      systemType: "important",
+    },
+  ];
+
+  await Promise.all(
+    defaultFolders.map((folder) =>
+      new Folder({
+        ...folder,
+        userId: savedUser._id.toString(),
+        isSystem: true,
+      }).save()
+    )
+  );
 
   const token = jwt.sign(
     { id: savedUser._id, username: savedUser.username },
     process.env.JWT_KEY,
     { expiresIn: "1h" }
   );
-
-  res.status(201).json({
-    token,
-    username: savedUser.username,
-    id: savedUser._id,
-  });
+  res
+    .status(201)
+    .json({ token, username: savedUser.username, id: savedUser._id });
 };
-
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
   console.log("Login attempt:", { email, password });

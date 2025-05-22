@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect, useRef } from "react"
-import Link from "next/link"
-import { useTheme } from "next-themes"
-import { toast } from "sonner"
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import {
   SunIcon,
   MoonIcon,
@@ -26,187 +26,230 @@ import {
   BarChart2Icon,
   CheckIcon,
   AlertCircleIcon,
-} from "lucide-react"
-import { useUser } from "@/context/user-context"
-import { useTasks } from "@/context/task-context"
+} from "lucide-react";
+import { useUser } from "@/context/user-context";
+import { useTasks } from "@/context/task-context";
+import { Task } from "@/lib/types";
 
 export function Dashboard() {
-  const [mounted, setMounted] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [newTask, setNewTask] = useState("")
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
-  const [editingTaskText, setEditingTaskText] = useState("")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [activeFilter, setActiveFilter] = useState<"all" | "completed" | "active">("all")
-  const [showMobileSearch, setShowMobileSearch] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false)
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const { theme, setTheme } = useTheme()
-  const { user, logout } = useUser()
-  const { tasks, setTasks, loading } = useTasks()
+  const [mounted, setMounted] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [newTask, setNewTask] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTaskText, setEditingTaskText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "completed" | "active"
+  >("all");
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const { user, logout } = useUser();
+  const { tasks, setTasks, loading } = useTasks();
 
-  const userMenuRef = useRef<HTMLDivElement>(null)
-  const filterMenuRef = useRef<HTMLDivElement>(null)
-  const notificationsRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const filterMenuRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   // Wait for theme to be available
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false)
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
       }
-      if (filterMenuRef.current && !filterMenuRef.current.contains(event.target as Node)) {
-        setIsFilterMenuOpen(false)
+      if (
+        filterMenuRef.current &&
+        !filterMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsFilterMenuOpen(false);
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
-        setIsNotificationsOpen(false)
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationsOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Generate demo tasks if none exist
   useEffect(() => {
     if (user && tasks.length === 0 && !loading) {
-      const demoTasks = [
+      const demoTasks: Task[] = [
         {
-          _id: "task1",
-          name: "Welcome to Planyze! Click the checkbox to mark as complete",
+          id: "task1",
+          title: "Welcome...",
           completed: false,
-          user_id: user.id,
+          userId: user.id,
+          folderId: "folder-inbox",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          priority: "none",
+          description: "",
+          labels: [],
         },
         {
-          _id: "task2",
-          name: "Edit tasks by clicking the pencil icon",
+          id: "task2",
+          title: "Try dragging tasks...",
           completed: false,
-          user_id: user.id,
+          userId: user.id,
+          folderId: "folder-inbox",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          priority: "none",
+          description: "",
+          labels: [],
         },
         {
-          _id: "task3",
-          name: "Delete tasks by clicking the trash icon",
-          completed: false,
-          user_id: user.id,
-        },
-        {
-          _id: "task4",
-          name: "Add new tasks using the input field above",
+          id: "task3",
+          title: "Create a new task...",
           completed: true,
-          user_id: user.id,
+          userId: user.id,
+          folderId: "folder-work",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          priority: "none",
+          description: "",
+          labels: [],
         },
-      ]
-      setTasks(demoTasks)
+      ];
+
+      setTasks(demoTasks);
     }
-  }, [user, tasks.length, loading, setTasks])
+  }, [user, tasks.length, loading, setTasks]);
 
-  if (!mounted) return null
+  if (!mounted) return null;
 
-  const isDark = theme === "dark"
+  const isDark = theme === "dark";
 
   const toggleColorScheme = () => {
-    setTheme(isDark ? "light" : "dark")
-  }
+    setTheme(isDark ? "light" : "dark");
+  };
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
-  }
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   const closeMenu = () => {
-    setIsMenuOpen(false)
-  }
+    setIsMenuOpen(false);
+  };
 
   const filteredTasks = tasks.filter((task) => {
-    const matchesSearch = task.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFilter = activeFilter === "all" || (activeFilter === "completed" ? task.completed : !task.completed)
-    return matchesSearch && matchesFilter
-  })
+    const matchesSearch = task.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesFilter =
+      activeFilter === "all" ||
+      (activeFilter === "completed" ? task.completed : !task.completed);
+    return matchesSearch && matchesFilter;
+  });
 
   const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newTask.trim() || !user) return
+    e.preventDefault();
+    if (!newTask.trim() || !user) return;
 
     try {
       // For demo purposes, create a task without API call
-      const newTaskObj = {
-        _id: `task-${Date.now()}`,
-        name: newTask,
+      const newTaskObj: Task = {
+        id: `task-${Date.now()}`,
+        title: newTask,
         completed: false,
-        user_id: user.id,
-      }
+        userId: user.id,
+        folderId: "folder-inbox",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        priority: "none",
+        description: "",
+        labels: [],
+      };
 
-      setTasks([...tasks, newTaskObj])
-      setNewTask("")
-      toast.success("Task added successfully")
+      setTasks([...tasks, newTaskObj]);
+      setNewTask("");
+      toast.success("Task added successfully");
     } catch (error) {
-      toast.error("Failed to add task")
+      toast.error("Failed to add task");
     }
-  }
+  };
 
   const handleToggleComplete = async (taskId: string, completed: boolean) => {
-    if (!user) return
+    if (!user) return;
 
     try {
       // For demo purposes, update task without API call
-      setTasks(tasks.map((task) => (task._id === taskId ? { ...task, completed: !completed } : task)))
+      setTasks(
+        tasks.map((task) =>
+          task.id === taskId ? { ...task, completed: !completed } : task
+        )
+      );
     } catch (error) {
-      toast.error("Failed to update task")
+      toast.error("Failed to update task");
     }
-  }
+  };
 
   const confirmDeleteTask = (taskId: string) => {
-    setTaskToDelete(taskId)
-    setIsDeleteModalOpen(true)
-  }
+    setTaskToDelete(taskId);
+    setIsDeleteModalOpen(true);
+  };
 
   const handleDeleteTask = async () => {
-    if (!user || !taskToDelete) return
+    if (!user || !taskToDelete) return;
 
     try {
       // For demo purposes, delete task without API call
-      setTasks(tasks.filter((task) => task._id !== taskToDelete))
-      toast.success("Task deleted successfully")
-      setIsDeleteModalOpen(false)
-      setTaskToDelete(null)
+      setTasks(tasks.filter((task) => task.id !== taskToDelete));
+      toast.success("Task deleted successfully");
+      setIsDeleteModalOpen(false);
+      setTaskToDelete(null);
     } catch (error) {
-      toast.error("Failed to delete task")
+      toast.error("Failed to delete task");
     }
-  }
+  };
 
   const startEditingTask = (taskId: string, taskName: string) => {
-    setEditingTaskId(taskId)
-    setEditingTaskText(taskName)
-  }
+    setEditingTaskId(taskId);
+    setEditingTaskText(taskName);
+  };
 
   const handleEditTask = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!editingTaskId || !editingTaskText.trim() || !user) return
+    e.preventDefault();
+    if (!editingTaskId || !editingTaskText.trim() || !user) return;
 
     try {
       // For demo purposes, edit task without API call
-      setTasks(tasks.map((task) => (task._id === editingTaskId ? { ...task, name: editingTaskText } : task)))
-      setEditingTaskId(null)
-      setEditingTaskText("")
-      toast.success("Task updated successfully")
+      setTasks(
+        tasks.map((task) =>
+          task.id === editingTaskId ? { ...task, title: editingTaskText } : task
+        )
+      );
+      setEditingTaskId(null);
+      setEditingTaskText("");
+      toast.success("Task updated successfully");
     } catch (error) {
-      toast.error("Failed to update task")
+      toast.error("Failed to update task");
     }
-  }
+  };
 
   const cancelEditing = () => {
-    setEditingTaskId(null)
-    setEditingTaskText("")
-  }
+    setEditingTaskId(null);
+    setEditingTaskText("");
+  };
 
   // Demo notifications
   const demoNotifications = [
@@ -231,9 +274,9 @@ export function Dashboard() {
       time: "1 day ago",
       read: true,
     },
-  ]
+  ];
 
-  const unreadNotifications = demoNotifications.filter((n) => !n.read).length
+  const unreadNotifications = demoNotifications.filter((n) => !n.read).length;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex flex-col">
@@ -248,19 +291,33 @@ export function Dashboard() {
             >
               <div className="w-6 flex flex-col gap-1.5">
                 <span
-                  className={`block h-0.5 bg-current transform transition-transform duration-300 ${isMenuOpen ? "rotate-45 translate-y-2" : ""}`}
+                  className={`block h-0.5 bg-current transform transition-transform duration-300 ${
+                    isMenuOpen ? "rotate-45 translate-y-2" : ""
+                  }`}
                 ></span>
                 <span
-                  className={`block h-0.5 bg-current transition-opacity duration-300 ${isMenuOpen ? "opacity-0" : "opacity-100"}`}
+                  className={`block h-0.5 bg-current transition-opacity duration-300 ${
+                    isMenuOpen ? "opacity-0" : "opacity-100"
+                  }`}
                 ></span>
                 <span
-                  className={`block h-0.5 bg-current transform transition-transform duration-300 ${isMenuOpen ? "-rotate-45 -translate-y-2" : ""}`}
+                  className={`block h-0.5 bg-current transform transition-transform duration-300 ${
+                    isMenuOpen ? "-rotate-45 -translate-y-2" : ""
+                  }`}
                 ></span>
               </div>
             </button>
             <Link href="/" className="flex items-center">
-              <ListTodoIcon className={`h-6 w-6 ${isDark ? "text-violet-400" : "text-violet-700"}`} />
-              <span className={`ml-2 text-lg font-bold ${isDark ? "text-violet-400" : "text-violet-700"}`}>
+              <ListTodoIcon
+                className={`h-6 w-6 ${
+                  isDark ? "text-violet-400" : "text-violet-700"
+                }`}
+              />
+              <span
+                className={`ml-2 text-lg font-bold ${
+                  isDark ? "text-violet-400" : "text-violet-700"
+                }`}
+              >
                 Planyze
               </span>
             </Link>
@@ -319,7 +376,11 @@ export function Dashboard() {
               className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               aria-label="Toggle theme"
             >
-              {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+              {isDark ? (
+                <SunIcon className="h-5 w-5" />
+              ) : (
+                <MoonIcon className="h-5 w-5" />
+              )}
             </button>
 
             <div className="relative" ref={notificationsRef}>
@@ -346,20 +407,30 @@ export function Dashboard() {
                   </div>
                   <div className="max-h-80 overflow-y-auto">
                     {demoNotifications.length === 0 ? (
-                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">No notifications</div>
+                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                        No notifications
+                      </div>
                     ) : (
                       demoNotifications.map((notification) => (
                         <div
                           key={notification.id}
                           className={`p-3 border-b border-gray-200 dark:border-gray-700 last:border-0 ${
-                            !notification.read ? "bg-violet-50 dark:bg-violet-900/20" : ""
+                            !notification.read
+                              ? "bg-violet-50 dark:bg-violet-900/20"
+                              : ""
                           }`}
                         >
                           <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-medium text-sm">{notification.title}</h4>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">{notification.time}</span>
+                            <h4 className="font-medium text-sm">
+                              {notification.title}
+                            </h4>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {notification.time}
+                            </span>
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{notification.message}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {notification.message}
+                          </p>
                         </div>
                       ))
                     )}
@@ -381,14 +452,20 @@ export function Dashboard() {
                 <div className="w-8 h-8 bg-violet-100 dark:bg-violet-900 rounded-full flex items-center justify-center text-violet-600 dark:text-violet-400 font-bold text-sm">
                   {user?.username?.charAt(0).toUpperCase() || "U"}
                 </div>
-                <span className="hidden md:block text-sm font-medium">{user?.username || "User"}</span>
+                <span className="hidden md:block text-sm font-medium">
+                  {user?.username || "User"}
+                </span>
               </button>
 
               {isUserMenuOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
                   <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                    <div className="font-medium">{user?.username || "User"}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{user?.email || "user@example.com"}</div>
+                    <div className="font-medium">
+                      {user?.username || "User"}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {user?.email || "user@example.com"}
+                    </div>
                   </div>
                   <div className="py-1">
                     <Link
@@ -468,19 +545,7 @@ export function Dashboard() {
                   0
                 </span>
               </Link>
-              <Link
-                href="/dashboard"
-                className="flex items-center justify-between px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                onClick={closeMenu}
-              >
-                <div className="flex items-center">
-                  <StarIcon className="h-5 w-5 mr-3 text-gray-500 dark:text-gray-400" />
-                  <span>Important</span>
-                </div>
-                <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-medium px-2 py-0.5 rounded-full">
-                  0
-                </span>
-              </Link>
+
 
               <div className="pt-4 pb-2">
                 <div className="flex items-center justify-between px-3">
@@ -552,15 +617,21 @@ export function Dashboard() {
                   className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <FilterIcon className="h-4 w-4" />
-                  <span>{activeFilter === "all" ? "All" : activeFilter === "completed" ? "Completed" : "Active"}</span>
+                  <span>
+                    {activeFilter === "all"
+                      ? "All"
+                      : activeFilter === "completed"
+                      ? "Completed"
+                      : "Active"}
+                  </span>
                 </button>
 
                 {isFilterMenuOpen && (
                   <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
                     <button
                       onClick={() => {
-                        setActiveFilter("all")
-                        setIsFilterMenuOpen(false)
+                        setActiveFilter("all");
+                        setIsFilterMenuOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-sm ${
                         activeFilter === "all"
@@ -572,8 +643,8 @@ export function Dashboard() {
                     </button>
                     <button
                       onClick={() => {
-                        setActiveFilter("active")
-                        setIsFilterMenuOpen(false)
+                        setActiveFilter("active");
+                        setIsFilterMenuOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-sm ${
                         activeFilter === "active"
@@ -585,8 +656,8 @@ export function Dashboard() {
                     </button>
                     <button
                       onClick={() => {
-                        setActiveFilter("completed")
-                        setIsFilterMenuOpen(false)
+                        setActiveFilter("completed");
+                        setIsFilterMenuOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-sm ${
                         activeFilter === "completed"
@@ -630,20 +701,24 @@ export function Dashboard() {
                   {searchQuery
                     ? "No tasks match your search"
                     : activeFilter !== "all"
-                      ? `No ${activeFilter} tasks found`
-                      : "No tasks yet. Add your first task above!"}
+                    ? `No ${activeFilter} tasks found`
+                    : "No tasks yet. Add your first task above!"}
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {filteredTasks.map((task) => (
                   <div
-                    key={task._id}
+                    key={task.id}
                     className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 transition-all duration-200 ${
                       task.completed ? "opacity-70" : ""
-                    } ${editingTaskId === task._id ? "ring-2 ring-violet-200 dark:ring-violet-800" : ""}`}
+                    } ${
+                      editingTaskId === task.id
+                        ? "ring-2 ring-violet-200 dark:ring-violet-800"
+                        : ""
+                    }`}
                   >
-                    {editingTaskId === task._id ? (
+                    {editingTaskId === task.id ? (
                       <form onSubmit={handleEditTask} className="flex gap-2">
                         <input
                           type="text"
@@ -671,35 +746,47 @@ export function Dashboard() {
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                           <div className="flex-shrink-0 pt-0.5">
                             <button
-                              onClick={() => handleToggleComplete(task._id, task.completed)}
+                              onClick={() =>
+                                handleToggleComplete(task.id, task.completed)
+                              }
                               className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                                 task.completed
                                   ? "bg-violet-600 dark:bg-violet-700 border-violet-600 dark:border-violet-700"
                                   : "border-gray-300 dark:border-gray-600 hover:border-violet-500 dark:hover:border-violet-500"
                               }`}
-                              aria-label={task.completed ? "Mark as incomplete" : "Mark as complete"}
+                              aria-label={
+                                task.completed
+                                  ? "Mark as incomplete"
+                                  : "Mark as complete"
+                              }
                             >
-                              {task.completed && <CheckIcon className="h-3 w-3 text-white" />}
+                              {task.completed && (
+                                <CheckIcon className="h-3 w-3 text-white" />
+                              )}
                             </button>
                           </div>
                           <span
                             className={`text-gray-800 dark:text-gray-200 truncate ${
-                              task.completed ? "line-through text-gray-500 dark:text-gray-400" : ""
+                              task.completed
+                                ? "line-through text-gray-500 dark:text-gray-400"
+                                : ""
                             }`}
                           >
-                            {task.name}
+                            {task.title}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 ml-2">
                           <button
-                            onClick={() => startEditingTask(task._id, task.name)}
+                            onClick={() =>
+                              startEditingTask(task.id, task.title)
+                            }
                             className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
                             aria-label="Edit task"
                           >
                             <PencilIcon className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => confirmDeleteTask(task._id)}
+                            onClick={() => confirmDeleteTask(task.id)}
                             className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
                             aria-label="Delete task"
                           >
@@ -727,7 +814,8 @@ export function Dashboard() {
               <div>
                 <h3 className="text-lg font-medium">Confirm deletion</h3>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  Are you sure you want to delete this task? This action cannot be undone.
+                  Are you sure you want to delete this task? This action cannot
+                  be undone.
                 </p>
               </div>
             </div>
@@ -751,8 +839,11 @@ export function Dashboard() {
 
       {/* Overlay for mobile menu */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-black/20 dark:bg-black/50 z-10 md:hidden" onClick={closeMenu}></div>
+        <div
+          className="fixed inset-0 bg-black/20 dark:bg-black/50 z-10 md:hidden"
+          onClick={closeMenu}
+        ></div>
       )}
     </div>
-  )
+  );
 }
