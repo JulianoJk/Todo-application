@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262.1 83.3% 57.8%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 263.4 70% 50.4%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 263.4 70% 50.4%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .shimmer-effect {
+    @apply bg-gradient-to-r from-transparent via-white/20 to-transparent bg-[length:200%_100%] animate-shimmer;
+  }
+
+  .task-item {
+    @apply transition-all duration-200 hover:shadow-md;
+  }
+
+  .task-item-enter {
+    @apply opacity-0 -translate-y-2;
+  }
+
+  .task-item-enter-active {
+    @apply opacity-100 translate-y-0 transition-all duration-300;
+  }
+
+  .task-item-exit {
+    @apply opacity-100;
+  }
+
+  .task-item-exit-active {
+    @apply opacity-0 translate-y-2 transition-all duration-300;
+  }
+
+  .folder-item {
+    @apply transition-all duration-200;
+  }
+
+  .folder-item-enter {
+    @apply opacity-0 -translate-x-2;
+  }
+
+  .folder-item-enter-active {
+    @apply opacity-100 translate-x-0 transition-all duration-300;
+  }
+
+  .folder-item-exit {
+    @apply opacity-100;
+  }
+
+  .folder-item-exit-active {
+    @apply opacity-0 translate-x-2 transition-all duration-300;
+  }
+
+  .perspective-card {
+    @apply transition-transform duration-500 hover:shadow-xl;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+
+  .perspective-card:hover {
+    transform: rotateX(0deg) translateY(-5px);
+  }
+
+  .perspective-card-initial {
+    transform: rotateX(5deg);
+  }
+}
